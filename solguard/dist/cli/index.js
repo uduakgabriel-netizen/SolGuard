@@ -1,5 +1,38 @@
 #!/usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -211,6 +244,38 @@ reclaimer
         // Ensure we attempt to close even on error if the orchestrator supports it
         engine.close();
         process.exit(1);
+    }
+});
+const report = program.command('report')
+    .description('Stage 5: Reporting, Audit & Proof.')
+    .option('-n, --network <type>', 'The network source (devnet or mainnet).', 'devnet')
+    .option('-f, --format <type>', 'Output format: json or text.', 'text')
+    .option('-o, --output <path>', 'Path to save the output file.')
+    .option('--account <pubkey>', 'Generate report for a specific account only.')
+    .action(async (options) => {
+    // Dynamic import to avoid circular dependencies if any, keeping it clean
+    const { ReportingEngine } = await Promise.resolve().then(() => __importStar(require('../core/reporting/index')));
+    const dbPath = path_1.default.join(process.cwd(), `kora-rent-${options.network}.db`);
+    if (options.format !== 'json' && options.format !== 'text') {
+        console.error('Error: Invalid format. Use "json" or "text".');
+        process.exit(1);
+    }
+    const engine = new ReportingEngine({
+        dbPath,
+        network: options.network,
+        format: options.format,
+        outputFile: options.output,
+        targetAccount: options.account
+    });
+    try {
+        engine.generate();
+    }
+    catch (e) {
+        console.error('Error generating report:', e);
+        process.exit(1);
+    }
+    finally {
+        engine.close();
     }
 });
 program.parse(process.argv);

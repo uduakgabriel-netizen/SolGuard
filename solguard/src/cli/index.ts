@@ -231,5 +231,40 @@ reclaimer
     }
   });
 
+const report = program.command('report')
+  .description('Stage 5: Reporting, Audit & Proof.')
+  .option('-n, --network <type>', 'The network source (devnet or mainnet).', 'devnet')
+  .option('-f, --format <type>', 'Output format: json or text.', 'text')
+  .option('-o, --output <path>', 'Path to save the output file.')
+  .option('--account <pubkey>', 'Generate report for a specific account only.')
+  .action(async (options) => {
+    // Dynamic import to avoid circular dependencies if any, keeping it clean
+    const { ReportingEngine } = await import('../core/reporting/index');
+
+    const dbPath = path.join(process.cwd(), `kora-rent-${options.network}.db`);
+
+    if (options.format !== 'json' && options.format !== 'text') {
+      console.error('Error: Invalid format. Use "json" or "text".');
+      process.exit(1);
+    }
+
+    const engine = new ReportingEngine({
+      dbPath,
+      network: options.network,
+      format: options.format,
+      outputFile: options.output,
+      targetAccount: options.account
+    });
+
+    try {
+      engine.generate();
+    } catch (e) {
+      console.error('Error generating report:', e);
+      process.exit(1);
+    } finally {
+      engine.close();
+    }
+  });
+
 program.parse(process.argv);
 
