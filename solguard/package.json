@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.0.10",
+    "better-sqlite3": "^12.6.2",
+    "commander": "^14.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
