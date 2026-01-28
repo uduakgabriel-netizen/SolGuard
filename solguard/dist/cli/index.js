@@ -47,6 +47,9 @@ const index_1 = require("../core/reclaimer/index");
 const web3_js_2 = require("@solana/web3.js");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const database_1 = require("../db/database");
+const service_1 = require("../core/attestation/service");
+const attestor_1 = require("../core/attestation/attestor");
 // Define network RPC endpoints
 const RPC_ENDPOINTS = {
     devnet: 'https://api.devnet.solana.com',
@@ -276,6 +279,85 @@ const report = program.command('report')
     }
     finally {
         engine.close();
+    }
+});
+const attest = program.command('attest')
+    .description('Stage 6: Cryptographic Execution Attestation');
+attest
+    .command('generate')
+    .description('Generate a cryptographic proof of execution state.')
+    .option('-n, --network <type>', 'The network source (devnet or mainnet).', 'devnet')
+    .option('-o, --output <path>', 'Path to save the attestation JSON.', './attestation.json')
+    .option('-k, --keypair <path>', 'Sign the attestation with operator keypair.')
+    .option('--rpc <url>', 'RPC URL used during execution (for manifest).')
+    .action(async (options) => {
+    console.log('SolGuard Attestation - Stage 6: Generate Proof');
+    console.log('----------------------------------------------');
+    const dbPath = path_1.default.join(process.cwd(), `kora-rent-${options.network}.db`);
+    const db = database_1.AppDatabase.getInstance(dbPath);
+    let operatorKeypair;
+    if (options.keypair) {
+        try {
+            const keyContent = fs_1.default.readFileSync(path_1.default.resolve(options.keypair), 'utf-8');
+            operatorKeypair = web3_js_2.Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keyContent)));
+        }
+        catch (e) {
+            console.error('Failed to load keypair:', e);
+            process.exit(1);
+        }
+    }
+    const service = new service_1.AttestationService(db, options.network);
+    // Minimal config capture
+    const config = {
+        generated_by: 'SolGuard CLI',
+        timestamp: new Date().toISOString(),
+        options
+    };
+    try {
+        const attestation = service.generate(config, operatorKeypair, options.rpc);
+        fs_1.default.writeFileSync(options.output, JSON.stringify(attestation, null, 2));
+        console.log(`[Success] Attestation generated at: ${options.output}`);
+        if (attestation.signature) {
+            console.log(`[Signed] By operator: ${attestation.manifest.operator_pubkey}`);
+        }
+    }
+    catch (e) {
+        console.error('[Error] Generation failed:', e);
+        process.exit(1);
+    }
+});
+attest
+    .command('verify')
+    .description('Verify a cryptographic attestation proof.')
+    .requiredOption('-f, --file <path>', 'Path to attestation JSON file.')
+    .action(async (options) => {
+    console.log('SolGuard Attestation - Stage 6: Verification');
+    console.log('--------------------------------------------');
+    try {
+        const content = fs_1.default.readFileSync(options.file, 'utf-8');
+        const doc = JSON.parse(content);
+        console.log('Verifying proof integrity...');
+        const isValid = attestor_1.Attestor.verify(doc);
+        if (isValid) {
+            console.log('✅ verification PASS');
+            console.log(`   Network: ${doc.manifest.network}`);
+            console.log(`   Candidates: ${doc.manifest.candidates.length}`);
+            console.log(`   Reclaimed: ${doc.result_digest.total_lamports_reclaimed} lamports`);
+            if (doc.signature) {
+                console.log(`   Signed By: ${doc.manifest.operator_pubkey}`);
+            }
+            else {
+                console.log(`   (Unsigned)`);
+            }
+        }
+        else {
+            console.error('❌ verification FAIL');
+            process.exit(1);
+        }
+    }
+    catch (e) {
+        console.error('Error reading/parsing file:', e);
+        process.exit(1);
     }
 });
 program.parse(process.argv);

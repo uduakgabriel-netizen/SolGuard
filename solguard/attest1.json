@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "version": "1.0.0",
+    "network": "devnet",
+    "operator_pubkey": null,
+    "config": {
+      "min_lamports": 0,
+      "min_age_days": 0,
+      "whitelist_hash": null
+    },
+    "rpc_endpoint": "unknown-rpc",
+    "db_state_hash": "754b9b0a2d86130a08d0e510a31cca5fb261f8643cb2e31de0c07c75ed5158db",
+    "candidates": [
+      "TestAccount111111111111111111111111111111111"
+    ]
+  },
+  "db_state_hash": "754b9b0a2d86130a08d0e510a31cca5fb261f8643cb2e31de0c07c75ed5158db",
+  "result_digest": {
+    "evaluated_count": 1,
+    "accounts": {
+      "TestAccount111111111111111111111111111111111": "RECLAIMED"
+    },
+    "total_lamports_reclaimed": "890880",
+    "transaction_signatures": [
+      "reclaim_tx_signature_abc"
+    ],
+    "failures": []
+  },
+  "attestation_hash": "888e996160931c8c6d5dacaa7d57c26500bbb9a5e0c34ea1b66541c5328804fd"
+}

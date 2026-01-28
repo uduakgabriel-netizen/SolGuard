@@ -41,9 +41,36 @@ class ReportingEngine {
         }
         const timelines = pubkeys.map(p => this.timelineBuilder.build(p)).filter(t => t !== null);
         // 3. Metadata
+        // To ensure determinism (Same DB -> Same Report), we must use the DB state for the timestamp.
+        // We take the latest timestamp found in lifecycle_events or sponsored_accounts.
+        const lastEventTime = this.db.prepare('SELECT MAX(timestamp) as t FROM lifecycle_events').pluck().get();
+        const lastDiscoveryTime = this.db.prepare('SELECT MAX(discovered_at) as t FROM sponsored_accounts').pluck().get();
+        // Pick the latest, or default to a fixed epoch if empty DB (for strict determinism on empty state)
+        let reportTimestamp = new Date(0).toISOString();
+        if (lastEventTime && lastDiscoveryTime) {
+            reportTimestamp = lastEventTime > lastDiscoveryTime ? lastEventTime : lastDiscoveryTime;
+        }
+        else if (lastEventTime) {
+            reportTimestamp = lastEventTime;
+        }
+        else if (lastDiscoveryTime) {
+            reportTimestamp = lastDiscoveryTime;
+        }
+        // Config Hash (Simple hash of critical params to prove configuration used)
+        const configString = JSON.stringify({
+            network: this.config.network,
+            format: this.config.format,
+            version: '1.0.0' // SolGuard core version
+        });
+        // Simple hash function since we can't easily rely on crypto module without imports or it might be overkill
+        // Using a simple djb2 variant or just base64 of the string for visibility
+        // Requirement just says <hash>. Let's use a simple distinct string buffer hash.
+        const crypto = require('crypto');
+        const configHash = crypto.createHash('sha256').update(configString).digest('hex').substring(0, 16);
         const metadata = {
             network: this.config.network,
-            timestamp: new Date().toISOString(),
+            timestamp: reportTimestamp,
+            config_hash: configHash,
             generated_by: 'SolGuard Stage 5 Reporting Engine',
             account_count: timelines.length
         };

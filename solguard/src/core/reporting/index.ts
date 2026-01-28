@@ -57,7 +57,6 @@ export class ReportingEngine {
         const timelines = pubkeys.map(p => this.timelineBuilder.build(p)).filter(t => t !== null) as any[];
 
         // 3. Metadata
-        // 3. Metadata
         // To ensure determinism (Same DB -> Same Report), we must use the DB state for the timestamp.
         // We take the latest timestamp found in lifecycle_events or sponsored_accounts.
         const lastEventTime = this.db.prepare('SELECT MAX(timestamp) as t FROM lifecycle_events').pluck().get() as string;
