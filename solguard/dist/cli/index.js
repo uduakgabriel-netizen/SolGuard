@@ -10,7 +10,7 @@ const web3_js_1 = require("@solana/web3.js");
 const indexer_1 = require("../core/indexer");
 const lifecycle_1 = require("../core/lifecycle");
 const policy_1 = require("../core/policy");
-const reclaimer_1 = require("../core/reclaimer");
+const index_1 = require("../core/reclaimer/index");
 const web3_js_2 = require("@solana/web3.js");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
@@ -196,21 +196,21 @@ reclaimer
     if (operatorKeypair) {
         console.log(`[Config] Operator: ${operatorKeypair.publicKey.toBase58()}`);
     }
-    const engine = new reclaimer_1.Reclaimer({
+    const engine = new index_1.ReclaimerOrchestrator({
         dbPath,
         rpcUrl,
         dryRun: options.dryRun,
-        operatorKeypair
+        operatorKeypair,
+        batchSize: 100 // Default batch size for scalability
     });
     try {
         await engine.execute();
     }
     catch (e) {
         console.error('[CRITICAL] Reclamation execution failed:', e);
-        process.exit(1);
-    }
-    finally {
+        // Ensure we attempt to close even on error if the orchestrator supports it
         engine.close();
+        process.exit(1);
     }
 });
 program.parse(process.argv);

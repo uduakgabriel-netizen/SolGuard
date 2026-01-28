@@ -5,7 +5,7 @@ import { PublicKey } from '@solana/web3.js';
 import { Indexer } from '../core/indexer';
 import { LifecycleEngine } from '../core/lifecycle';
 import { PolicyEngine } from '../core/policy';
-import { Reclaimer } from '../core/reclaimer';
+import { ReclaimerOrchestrator } from '../core/reclaimer/index';
 import { Keypair } from '@solana/web3.js';
 import fs from 'fs';
 import path from 'path';
@@ -213,20 +213,21 @@ reclaimer
       console.log(`[Config] Operator: ${operatorKeypair.publicKey.toBase58()}`);
     }
 
-    const engine = new Reclaimer({
+    const engine = new ReclaimerOrchestrator({
       dbPath,
       rpcUrl,
       dryRun: options.dryRun,
-      operatorKeypair
+      operatorKeypair,
+      batchSize: 100 // Default batch size for scalability
     });
 
     try {
       await engine.execute();
     } catch (e) {
       console.error('[CRITICAL] Reclamation execution failed:', e);
-      process.exit(1);
-    } finally {
+      // Ensure we attempt to close even on error if the orchestrator supports it
       engine.close();
+      process.exit(1);
     }
   });
 

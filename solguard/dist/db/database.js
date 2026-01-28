@@ -40,7 +40,9 @@ class AppDatabase {
         lamports INTEGER,
         data_len INTEGER,
         owner_program TEXT,
-        last_lifecycle_check DATETIME
+        last_lifecycle_check DATETIME,
+        -- Stage 4: Processing Lock for Idempotency
+        processing_lock TEXT -- UUID or timestamp of the active worker processing this account
       );
 
       -- Generic key-value store for system state, primarily for the transaction cursor
@@ -75,6 +77,7 @@ class AppDatabase {
         try {
             const columns = db.pragma('table_info(sponsored_accounts)');
             const hasLifecycle = columns.some(c => c.name === 'lifecycle_state');
+            // Migration for Stage 2
             if (!hasLifecycle) {
                 console.log('[DB] Migrating schema: Adding lifecycle fields to sponsored_accounts...');
                 db.exec(`ALTER TABLE sponsored_accounts ADD COLUMN lifecycle_state TEXT DEFAULT 'DISCOVERED'`);
@@ -82,6 +85,12 @@ class AppDatabase {
                 db.exec(`ALTER TABLE sponsored_accounts ADD COLUMN data_len INTEGER`);
                 db.exec(`ALTER TABLE sponsored_accounts ADD COLUMN owner_program TEXT`);
                 db.exec(`ALTER TABLE sponsored_accounts ADD COLUMN last_lifecycle_check DATETIME`);
+            }
+            // Migration for Stage 4
+            const hasLock = columns.some(c => c.name === 'processing_lock');
+            if (!hasLock) {
+                console.log('[DB] Migrating schema: Adding processing_lock field to sponsored_accounts...');
+                db.exec(`ALTER TABLE sponsored_accounts ADD COLUMN processing_lock TEXT`);
             }
         }
         catch (e) {
