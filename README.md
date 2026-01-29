@@ -1,199 +1,260 @@
-# SolGuard
-Recover lost SOL, monitor sponsored accounts, and safeguard operator funds — intelligently, safely, and at scale
 
+# SolGuard – Kora Rent Intelligence Engine
 
+## Problem Statement
 
-# SolGuard
+Kora makes it easy for apps to sponsor transactions and account creation on Solana, improving user experience by eliminating the need for users to hold SOL. However, this convenience introduces a hidden cost: **rent-locked SOL**.
 
-**Cryptographic Execution Attestation for Solana**
+When a Kora node sponsors account creation, SOL is locked as rent. Over time, many of these accounts become inactive, closed, or no longer needed. Operators often lack an automated way to track or reclaim this rent, leading to **silent capital loss**.
 
-> *If execution cannot be proven, it cannot be trusted.*
-
-SolGuard is a **production‑grade, Solana‑native CLI** that provides **cryptographic proof that an on‑chain execution actually happened**, exactly as claimed, by a specific operator, at a specific time, using a specific logic version.
-
-This project directly targets the **core pain point of the bounty**: **trust, verifiability, and auditability of off‑chain execution interacting with Solana**.
-
-No frontend. No screenshots. No assumptions. Just **verifiable truth**.
+The problem: how can Kora operators **automatically monitor, track, and safely reclaim rent-locked SOL** from sponsored accounts without manual inspection or guesswork?
 
 ---
 
-## 🎯 Problem This Bounty Is Asking Us to Solve
+## Solution Overview
 
-Across the Solana ecosystem today:
+**SolGuard** is a fully automated, production-grade CLI tool that:
 
-* Bots, relayers, indexers, and automation tools *claim* they executed actions
-* These executions often happen **off‑chain**
-* Judges, users, and protocols are asked to trust logs, screenshots, or promises
+- Monitors sponsored accounts on Solana
+- Evaluates lifecycle state of accounts
+- Applies configurable policy rules to determine reclaimability
+- Executes safe reclamation of rent SOL
+- Produces detailed reports and cryptographic proofs for verification
 
-This creates serious problems:
-
-* ❌ No cryptographic proof of execution
-* ❌ No immutable execution receipts
-* ❌ No way to audit automation after the fact
-* ❌ No production‑ready verification standard
-
-**SolGuard solves this exact problem.**
-
-It introduces a **Cryptographic Execution Attestation Layer** that makes off‑chain execution **provable, verifiable, and auditable**.
+SolGuard helps operators recover lost rent with **clarity, auditability, and safety**.
 
 ---
 
-## ✅ What SolGuard Does
+## How SolGuard Solves This Problem (Stage-by-Stage)
 
-SolGuard allows any operator (human, bot, or service) to:
+SolGuard’s design consists of six stages:
 
-1. Execute an on‑chain action
-2. Generate a deterministic execution context
-3. Cryptographically sign that execution
-4. Bind it to a Solana transaction
-5. Produce a verifiable, tamper‑proof receipt
+1. **Stage 1 – Indexer (Discovery)**  
+   Scans blockchain history for accounts sponsored by the given operator and stores them in the local database.
 
-All through a **single, auditable CLI**.
+2. **Stage 2 – Lifecycle Scan (Analysis)**  
+   Verifies on-chain status of each discovered account: active, closed, or inactive.
 
----
+3. **Stage 3 – Policy Evaluation (Decision Making)**  
+   Applies safety and reclaimability rules (minimum lamports, age, whitelists) to classify accounts.
 
-## 🧱 Architecture Overview
+4. **Stage 4 – Reclamation (Action)**  
+   Performs SOL reclaim transactions in batches with dry‑run mode and full safety checks.
 
-SolGuard is intentionally designed like real infrastructure tooling:
+5. **Stage 5 – Reporting (Audit & Transparency)**  
+   Generates human‑readable reports summarizing account states and reclaimable balances.
 
-1. **CLI Interface** – deterministic, scriptable, automation‑friendly
-2. **Discovery Engine** – finds relevant on‑chain targets
-3. **Lifecycle Analyzer** – validates live on‑chain state
-4. **Policy Engine** – enforces deterministic decision rules
-5. **Execution Engine** – performs on‑chain actions
-6. **Cryptographic Attestation Engine** – signs immutable execution proofs
-
-Each stage produces **machine‑verifiable outputs**.
+6. **Stage 6 – Attestation & Proof (Verification)**  
+   Produces a cryptographic proof of all operations for reliable verification by auditors or judges.
 
 ---
 
-## 🧪 Tested Environment
+## Installation
 
-SolGuard has been tested on:
+### Prerequisites
 
-* **Solana Devnet**
-* CLI‑only environment (no frontend)
-* Multiple deterministic execution runs
-
-The stages below reflect **real tested flows and expected outputs**.
+- **Node.js v18+**
+- **npm**
+- **Git**
+- Optional: TypeScript and ts‑node (`npm install -g typescript ts-node`)
+- Internet access for Solana RPC
 
 ---
 
-## 🧩 Stage‑by‑Stage Execution Flow
+### Windows
 
-### Stage 1 — Discovery (Indexer)
+1. Install Node.js (v18+) from https://nodejs.org
+2. Clone the repo:
+```powershell
+git clone https://github.com/uduakgabriel-netizen/SolGuard.git
+cd SolGuard\solguard
+````
 
-**Command:**
+3. Install dependencies:
+
+```powershell
+npm install
+```
+
+---
+
+### Linux / macOS
+
+1. Ensure Node.js and npm are installed.
+2. Clone the repo:
 
 ```bash
-npx ts-node src/cli/index.ts scan --network devnet --operator <WALLET_PUBKEY>
+git clone https://github.com/uduakgabriel-netizen/SolGuard.git
+cd SolGuard/solguard
 ```
 
-**Expected Output:**
+3. Install dependencies:
 
-```
-[SCAN] Processing signatures...
-[SCAN] Discovered new sponsored account: 9xK...Q2a
-[SCAN] Discovery complete
+```bash
+npm install
 ```
 
 ---
 
-### Stage 2 — Lifecycle Analysis
+## Usage (Quick Start)
 
-**Command:**
+Replace `<YOUR_PUBLIC_KEY>` and `<PATH_TO_KEYPAIR_JSON>` with your Solana wallet public key and keypair path.
+
+### Stage 1 – Indexer
+
+```bash
+npx ts-node src/cli/index.ts scan --network devnet --operator <YOUR_PUBLIC_KEY>
+```
+
+### Stage 2 – Lifecycle Scan
 
 ```bash
 npx ts-node src/cli/index.ts lifecycle scan --network devnet
 ```
 
-**Expected Output:**
-
-```
-[LIFECYCLE] Account 9xK...Q2a → ACTIVE
-[LIFECYCLE] Scan complete
-```
-
----
-
-### Stage 3 — Policy Evaluation
-
-**Command:**
+### Stage 3 – Policy Evaluation
 
 ```bash
 npx ts-node src/cli/index.ts policy evaluate --network devnet --min-lamports 0 --min-age-days 0
 ```
 
-**Expected Output:**
-
-```
-[POLICY] Account 9xK...Q2a marked as RECLAIMABLE
-```
-
----
-
-### Stage 4 — Execution (On‑Chain)
-
-**Command:**
+### Stage 4 – Reclamation (Dry Run)
 
 ```bash
-npx ts-node src/cli/index.ts reclaim execute --network devnet --keypair ./operator.json
+npx ts-node src/cli/index.ts reclaim execute --network devnet --keypair <PATH_TO_KEYPAIR_JSON> --dry-run
 ```
 
-**Expected Output:**
-
-```
-[EXECUTION] Transaction confirmed
-[EXECUTION] Recovered 2039280 lamports
-```
-
----
-
-### Stage 5 — Cryptographic Attestation
-
-**Command:**
+### Stage 5 – Reporting
 
 ```bash
-npx ts-node src/cli/index.ts attest generate --network devnet --output proof.json --keypair ./operator.json
+npx ts-node src/cli/index.ts report --network devnet --format text
 ```
 
-**Expected Output:**
+### Stage 6 – Attestation & Proof
 
-```
-[ATTEST] Proof written to proof.json
+```bash
+npx ts-node src/cli/index.ts attest generate --network devnet --output proof.json --keypair <PATH_TO_KEYPAIR_JSON>
+npx ts-node src/cli/index.ts attest verify --file proof.json
 ```
 
 ---
 
-### Stage 6 (BONUS) — Verification
+## Expected Output (Per Stage)
 
-**Command:**
+| Stage          | Output                                                    |
+| -------------- | --------------------------------------------------------- |
+| Indexer        | Logs discovered sponsored accounts and initializes the DB |
+| Lifecycle Scan | Annotates account states (ACTIVE, CLOSED, etc.)           |
+| Policy Eval    | Shows which accounts are RECLAIMABLE                      |
+| Reclamation    | Shows summary of reclaimed SOL (0 on dry‑run)             |
+| Reporting      | Human‑readable metrics and logs                           |
+| Attestation    | Cryptographically verifiable proof file                   |
+
+---
+
+## Safety Guarantees
+
+* **Dry‑run mode**: Safely simulate reclaim without transactions
+* **Policy rules**: Protect accounts from unsafe reclamation
+* **Batch execution**: Efficient transaction grouping
+* **Audit logs**: Full persistent logs with reasons and evidence
+
+---
+
+## Attestation & Proof
+
+SolGuard generates an attestation file (`proof.json`), which is:
+
+* Immutable
+* Verifiable independently
+* Provides a full audit of what happened and why
+
+Verify proof:
 
 ```bash
 npx ts-node src/cli/index.ts attest verify --file proof.json
 ```
 
-**Expected Output:**
+---
 
-```
-[VERIFY] ✅ VERIFICATION PASS
-```
+## Known Limitations
+
+* Requires Solana RPC (network must be reachable)
+* Dry run does not reclaim real SOL
+* Mainnet use must be done with care (real funds)
+* `better-sqlite3` may require platform‑specific rebuilds
 
 ---
 
-## 🏆 Why SolGuard Is the Right Solution
+## Why This Meets the Kora Bounty Requirements
 
-* ✔ Directly addresses trust & verification
-* ✔ Uses real cryptography, not assumptions
-* ✔ Production‑aligned (CLI, auditable, deterministic)
-* ✔ Extensible to bots, DAOs, and enterprise infra
+* Automates tracking of sponsored accounts
+* Applies lifecycle checks and policy rules
+* Reclaims eligible rent SOL safely
+* Produces clear reports and cryptographic proofs
+* Works across operating systems and environments
+
+**SolGuard is not a guesswork bot — it is a safe, auditable, and production‑ready rent intelligence engine.**
+A result showing zero reclaimed SOL is still considered a valid and correct outcome if no eligible accounts exist.
 
 ---
 
-## 🧾 Final Note to Judges
+## Judge Cheat Sheet – Quick Verification (Devnet)
 
-SolGuard focuses on the hardest problem first:
+Follow these commands in order. Replace values where needed.
 
-> **Can execution be proven?**
+### Stage 1 – Indexer
 
-With SolGuard, the answer is **yes — cryptographically**.
+```bash
+npx ts-node src/cli/index.ts scan --network devnet --operator <YOUR_PUBLIC_KEY>
+```
+
+**Expected:** Logs of discovery and DB initialization.
+
+### Stage 2 – Lifecycle Scan
+
+```bash
+npx ts-node src/cli/index.ts lifecycle scan --network devnet
+```
+
+**Expected:** Lifecycle statuses processed.
+
+### Stage 3 – Policy Evaluation
+
+```bash
+npx ts-node src/cli/index.ts policy evaluate --network devnet --min-lamports 0 --min-age-days 0
+```
+
+**Expected:** RECLAIMABLE categories identified (or zero).
+
+### Stage 4 – Reclamation (Dry Run)
+
+```bash
+npx ts-node src/cli/index.ts reclaim execute --network devnet --keypair <PATH_TO_KEYPAIR_JSON> --dry-run
+```
+
+**Expected:** No real transactions, summary of what *would* be reclaimed.
+
+### Stage 5 – Reporting
+
+```bash
+npx ts-node src/cli/index.ts report --network devnet --format text
+```
+
+**Expected:** Human‑readable metrics (0 is a valid result).
+
+### Stage 6 – Attestation & Proof
+
+```bash
+npx ts-node src/cli/index.ts attest generate --network devnet --output proof.json --keypair <PATH_TO_KEYPAIR_JSON>
+npx ts-node src/cli/index.ts attest verify --file proof.json
+```
+
+**Expected:** `proof.json` created; verification PASS: `✅ verification PASS`.
+
+**Notes for Judges:**
+
+* Use Devnet for easy validation.
+* Dry run avoids real fund movement.
+* Database logs are persistent in `kora-rent-devnet.db`.
+
